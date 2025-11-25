@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import 'detail_screen.dart';
 import 'favorite_screen.dart';
+import 'login_screen.dart'; // Import LoginScreen agar bisa kembali ke sana
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -138,6 +139,20 @@ class _AmiiboHomeContentState extends State<AmiiboHomeContent> {
     });
   }
 
+  // --- LOGOUT LOGIC (Baru) ---
+  void _handleLogout() async {
+    // 1. Panggil fungsi logout di service (hapus sesi)
+    await _storageService.logoutUser();
+
+    // 2. Arahkan kembali ke LoginScreen
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -150,11 +165,11 @@ class _AmiiboHomeContentState extends State<AmiiboHomeContent> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Title (Ikon Notifikasi sudah dihapus di sini)
-                const Row(
+                // Header Title & LOGOUT BUTTON
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    const Text(
                       "Nintendo Amiibo",
                       style: TextStyle(
                         color: Colors.white,
@@ -162,7 +177,52 @@ class _AmiiboHomeContentState extends State<AmiiboHomeContent> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    // Container Ikon Notifikasi DIHAPUS
+                    // TOMBOL LOGOUT (ICON MERAH)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2B2B2B),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.logout_rounded,
+                          color: Colors.redAccent,
+                        ),
+                        onPressed: () {
+                          // Tampilkan Dialog Konfirmasi Logout
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              backgroundColor: const Color(0xFF2B2B2B),
+                              title: const Text(
+                                "Logout",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              content: const Text(
+                                "Are you sure you want to logout?",
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text("Cancel"),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context); // Tutup dialog
+                                    _handleLogout(); // Jalankan logout
+                                  },
+                                  child: const Text(
+                                    "Logout",
+                                    style: TextStyle(color: Colors.redAccent),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),

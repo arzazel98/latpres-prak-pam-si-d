@@ -1,7 +1,9 @@
 // main.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Untuk mengatur warna status bar HP
+import 'package:flutter/services.dart';
 import 'package:nitendo/screen/home_screen.dart';
+import 'package:nitendo/screen/login_screen.dart';
+import 'services/storage_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,7 +14,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mengatur warna status bar HP agar ikon-ikonnya (jam, baterai) berwarna putih
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -21,19 +22,14 @@ class MyApp extends StatelessWidget {
     );
 
     return MaterialApp(
-      debugShowCheckedModeBanner:
-          false, // Menghilangkan pita "Debug" di pojok kanan atas
+      debugShowCheckedModeBanner: false,
       title: 'Nintendo Amiibo App',
 
-      // Tema Global: Kita set ke Dark Mode agar cocok dengan UI yang kita buat
       theme: ThemeData(
         useMaterial3: true,
-        brightness: Brightness.dark, // Agar text default otomatis putih
-        scaffoldBackgroundColor: const Color(
-          0xFF151517,
-        ), // Warna background utama (Hitam Gelap)
-        primaryColor: const Color(0xFF6C63FF), // Warna aksen (Ungu)
-        // Mengatur font default (opsional, Google Fonts bisa ditambahkan jika mau)
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF151517),
+        primaryColor: const Color(0xFF6C63FF),
         fontFamily: 'Roboto',
 
         appBarTheme: const AppBarTheme(
@@ -49,8 +45,45 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      // Halaman pertama yang dibuka
-      home: const HomeScreen(),
+      // Halaman pertama yang dicek adalah AuthWrapper
+      home: const AuthWrapper(),
+    );
+  }
+}
+
+// --- Auth Wrapper: Pengecek Status Login ---
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  final StorageService _storageService = StorageService();
+
+  @override
+  Widget build(BuildContext context) {
+    // FutureBuilder akan mengecek status login saat aplikasi dimulai
+    return FutureBuilder<bool>(
+      future: _storageService.isLoggedIn(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Tampilkan loading screen/splash screen saat menunggu
+          return const Scaffold(
+            backgroundColor: Color(0xFF151517),
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Jika sudah login (snapshot.data == true), arahkan ke Home
+        if (snapshot.hasData && snapshot.data == true) {
+          return const HomeScreen();
+        }
+
+        // Jika belum login atau data false, arahkan ke Login
+        return const LoginScreen();
+      },
     );
   }
 }
